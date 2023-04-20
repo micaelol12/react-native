@@ -12,7 +12,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "white",
     padding: 12,
-    fontFamily: 'open-sans-bold'
+    fontFamily: 'open-sans-bold',
+    maxWidth: '80%',
+    width:300
   },
 });
 
