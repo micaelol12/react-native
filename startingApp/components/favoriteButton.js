@@ -2,13 +2,12 @@ import { useRef, useState } from "react";
 import IconButton from "./IconButton";
 import { Animated, StyleSheet } from "react-native";
 
-const FavoriteButton = ({ onPress }) => {
-  const [liked, setLiked] = useState(false);
-  const outline = useRef(new Animated.Value(1)).current;
-  const filled = useRef(new Animated.Value(0)).current;
+const FavoriteButton = ({ onPress, value }) => {
+  const [liked, setLiked] = useState(value);
+  const outline = useRef(new Animated.Value(liked ? 0 : 1)).current;
+  const filled = useRef(new Animated.Value(liked ? 1 : 0)).current;
 
   const pressHandler = () => {
-    onPress();
     Animated.spring(!liked ? filled : outline, {
       toValue: 1,
       bounciness: 20,
@@ -19,6 +18,7 @@ const FavoriteButton = ({ onPress }) => {
       useNativeDriver: true,
     }).start();
     setLiked((v) => !v);
+    onPress();
   };
 
   return (
