@@ -7,7 +7,12 @@ const ExpensesList = ({ expenses }) => {
       data={expenses}
       keyExtractor={(expenses) => expenses.id}
       renderItem={({ item }) => (
-        <Expense date={item.date} title={item.title} value={item.value} />
+        <Expense
+          date={item.date}
+          title={item.title}
+          value={item.value}
+          id={item.id}
+        />
       )}
     />
   );
