@@ -1,16 +1,23 @@
-import { useLayoutEffect } from "react";
-import { StyleSheet, Text } from "react-native";
-import IconButton from "../components/ui/IconButton";
+import { useContext, useLayoutEffect } from "react";
+import { StyleSheet, View } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+
 import { GlobalStyles } from "../contants/styles";
-import { View } from "react-native";
-import Button from "../components/ui/Button";
-import { useDispatch } from "react-redux";
 import { expenseAction } from "../store/slices/expenses-slice";
+import IconButton from "../components/ui/IconButton";
+import ExpenseForm from "../components/ManageExpense/ExpenseForm";
+import { deleteExpense, storeExpense, updateExpense } from "../utils/http";
 
 const ManageExpense = ({ route, navigation }) => {
+  const expenses = useSelector((state) => state.expenses.expenses);
+
   const editedExpenseId = route.params?.expenseId;
   const isEditing = !!editedExpenseId;
   const dispatch = useDispatch();
+
+  const selectedExpense = expenses.find(
+    (expense) => expense.id === editedExpenseId
+  );
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -18,7 +25,8 @@ const ManageExpense = ({ route, navigation }) => {
     });
   }, [navigation, isEditing]);
 
-  const deleteExpenseHandler = () => {
+  const deleteExpenseHandler = async () => {
+    await deleteExpense(editedExpenseId);
     dispatch(expenseAction.removeExpense(editedExpenseId));
     navigation.goBack();
   };
@@ -27,34 +35,33 @@ const ManageExpense = ({ route, navigation }) => {
     navigation.goBack();
   };
 
-  const confirmHandler = () => {
-    const expenseExemple = {
-      title: "test exemple",
-      date: "2023-02-18",
-      value: 18.59,
-    };
-    if(isEditing){
-      dispatch(expenseAction.updateExpense({
-        expense: expenseExemple,
-        id: editedExpenseId
-      }))
+  const confirmHandler = async (expenseData) => {
+    if (isEditing) {
+      await updateExpense(editedExpenseId,expenseData);
+      dispatch(
+        expenseAction.updateExpense({
+          expense: expenseData,
+          id: editedExpenseId,
+        })
+      );
 
-    }else{
-      dispatch(expenseAction.addExpense(expenseExemple))
+    } else {
+      const response = await storeExpense(expenseData)
+      const ExpenseId = response.data.name
+
+      dispatch(expenseAction.addExpense({...expenseData, id: ExpenseId}));
     }
     navigation.goBack();
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.buttons}>
-        <Button mode="flat" onPress={cancelHandler} style={styles.button}>
-          Cancel
-        </Button>
-        <Button onPress={confirmHandler} style={styles.button}>
-          Confirm
-        </Button>
-      </View>
+      <ExpenseForm
+        onCancel={cancelHandler}
+        submitButtonLabel={isEditing ? "Update" : "Add"}
+        onSubmit={confirmHandler}
+        defaultValues={selectedExpense}
+      />
       {isEditing && (
         <View style={styles.deleteContainer}>
           <IconButton
@@ -76,15 +83,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     backgroundColor: GlobalStyles.colors.primary800,
-  },
-  buttons: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  button: {
-    minWidth: 120,
-    marginHorizontal: 8,
   },
   deleteContainer: {
     marginTop: 16,

@@ -1,9 +1,22 @@
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import ExpensesOutput from "../components/Expenses/ExpensesOutput";
 import { getDateMinusDays } from "../utils/DateFormater";
+import { useEffect } from "react";
+import { getExpenses } from "../utils/http";
+import { expenseAction } from "../store/slices/expenses-slice";
 
 const RecentExpenses = () => {
   const expenses = useSelector((state) => state.expenses.expenses);
+  const dispatch = useDispatch()
+
+  const getExp = async () => {
+    const expenses = await getExpenses()
+    dispatch(expenseAction.setExpenses(expenses))
+  }
+
+  useEffect(() => {
+    getExp();
+  },[])
 
   const recentExpenses = expenses.filter((expense) => {
     const today = new Date();
