@@ -70,6 +70,7 @@ const styles = StyleSheet.create({
   value: {
     color: GlobalStyles.colors.primary400,
     fontWeight: "bold",
+    textAlign:'center'
   },
 });
 

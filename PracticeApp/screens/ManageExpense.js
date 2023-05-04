@@ -7,8 +7,15 @@ import { expenseAction } from "../store/slices/expenses-slice";
 import IconButton from "../components/ui/IconButton";
 import ExpenseForm from "../components/ManageExpense/ExpenseForm";
 import { deleteExpense, storeExpense, updateExpense } from "../utils/http";
+import { useCallback } from "react";
+import { useState } from "react";
+import LoadingOverlay from "../components/ui/LoadingOverlay";
+import ErrorOverlay from "../components/ui/ErrorOverlay";
 
 const ManageExpense = ({ route, navigation }) => {
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState();
+
   const expenses = useSelector((state) => state.expenses.expenses);
 
   const editedExpenseId = route.params?.expenseId;
@@ -25,35 +32,51 @@ const ManageExpense = ({ route, navigation }) => {
     });
   }, [navigation, isEditing]);
 
-  const deleteExpenseHandler = async () => {
-    await deleteExpense(editedExpenseId);
-    dispatch(expenseAction.removeExpense(editedExpenseId));
-    navigation.goBack();
-  };
+  const deleteExpenseHandler = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      await deleteExpense(editedExpenseId);
+      dispatch(expenseAction.removeExpense(editedExpenseId));
+      navigation.goBack();
+    } catch (error) {
+      setError('Could not delete expense - please try again later!')
+    }
+    setIsLoading(false)
+  }, [])
 
   const cancelHandler = () => {
     navigation.goBack();
   };
 
   const confirmHandler = async (expenseData) => {
-    if (isEditing) {
-      await updateExpense(editedExpenseId,expenseData);
-      dispatch(
-        expenseAction.updateExpense({
-          expense: expenseData,
-          id: editedExpenseId,
-        })
-      );
+    setIsLoading(true)
+    try {
+      if (isEditing) {
+        await updateExpense(editedExpenseId, expenseData);
+        dispatch(
+          expenseAction.updateExpense({
+            expense: expenseData,
+            id: editedExpenseId,
+          })
+        );
+      } else {
+        const response = await storeExpense(expenseData)
+        const ExpenseId = response.data.name
 
-    } else {
-      const response = await storeExpense(expenseData)
-      const ExpenseId = response.data.name
-
-      dispatch(expenseAction.addExpense({...expenseData, id: ExpenseId}));
+        dispatch(expenseAction.addExpense({ ...expenseData, id: ExpenseId }));
+      }
+      navigation.goBack();
+    } catch (error) {
+      setError('Could not save data - please try again later')
     }
-    navigation.goBack();
+    setIsLoading(false)
   };
 
+  const errorHandler = () => setError(null)
+
+  if (isLoading) return <LoadingOverlay />
+
+  if (error && !isLoading) return <ErrorOverlay message={error} onConfirm={errorHandler} />
   return (
     <View style={styles.container}>
       <ExpenseForm
